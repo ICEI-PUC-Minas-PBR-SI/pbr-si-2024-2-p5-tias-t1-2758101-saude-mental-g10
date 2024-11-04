@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:saude_mental/database/mysql_connection.dart';
+
 
 void main() {
   runApp(MyApp());

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart'; 
+import 'package:saude_mental/database/mysql_connection.dart';
+
 
 class AvaliacaoClinicaPage extends StatefulWidget {
   @override

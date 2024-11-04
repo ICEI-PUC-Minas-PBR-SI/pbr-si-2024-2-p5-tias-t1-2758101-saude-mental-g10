@@ -1,3 +1,4 @@
+import 'package:saude_mental/database/mysql_connection.dart';
 import 'package:flutter/material.dart';
 import 'cadastro_cliente.dart';
 import 'avaliacao_clinica.dart';
@@ -84,7 +85,7 @@ class HomePage extends StatelessWidget {
             ),
             _buildButton(
               context,
-              label: 'Solicitações de Cadastro',
+              label: 'Aprovar Clínicas',
               onPressed: () {
                 Navigator.push(
                   context,

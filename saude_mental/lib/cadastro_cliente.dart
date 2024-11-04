@@ -1,5 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:mysql1/mysql1.dart';
+import 'package:saude_mental/database/mysql_connection.dart';
 
+// Classe para o serviço de banco de dados
+class DatabaseService {
+  // Configuração do banco de dados
+  final ConnectionSettings settings = ConnectionSettings(
+    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
+    port: 3306,
+    user: 'app',
+    password: 'trabalhosaude2024',
+    db: 'tisaudebanco',
+  );
+
+  Future<MySqlConnection> connect() async {
+    return await MySqlConnection.connect(settings);
+  }
+
+  Future<void> cadastrarCliente({
+    required String nome,
+    required String email,
+    required String senha,
+    String? endereco,
+    String? telefone,
+    bool psicoterapia = false,
+    bool psiquiatria = false,
+  }) async {
+    final conn = await connect();
+    try {
+      // Alterado para inserir na tabela tbl_usuario
+      await conn.query(
+        'INSERT INTO tbl_usuario (nome, email, senha, endereco, telefone, psicoterapia, psiquiatria) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [nome, email, senha, endereco, telefone, psicoterapia ? 1 : 0, psiquiatria ? 1 : 0],
+      );
+    } catch (e) {
+      print('Erro ao cadastrar cliente: $e');
+    } finally {
+      await conn.close();
+    }
+  }
+}
+
+// Widget de cadastro de cliente
 class CadastroCliente extends StatefulWidget {
   @override
   _CadastroClienteState createState() => _CadastroClienteState();
@@ -20,9 +62,20 @@ class _CadastroClienteState extends State<CadastroCliente> {
   bool _psiquiatria = false;
 
   // Função para validação e envio do formulário
-  void _cadastrar() {
+  void _cadastrar() async {
     if (_formKey.currentState!.validate()) {
-      // Se caso formos usar e-mail de confirmação, vou ajustar a lógica aqui.
+      final databaseService = DatabaseService();
+
+      // Enviar dados para o banco
+      await databaseService.cadastrarCliente(
+        nome: _nomeController.text,
+        email: _emailController.text,
+        senha: _senhaController.text,
+        endereco: _enderecoController.text.isNotEmpty ? _enderecoController.text : null,
+        telefone: _telefoneController.text.isNotEmpty ? _telefoneController.text : null,
+        psicoterapia: _psicoterapia,
+        psiquiatria: _psiquiatria,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cadastro realizado com sucesso.')),
