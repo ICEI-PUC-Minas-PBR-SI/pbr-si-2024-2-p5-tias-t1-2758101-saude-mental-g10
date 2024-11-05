@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:saude_mental/database/mysql_connection.dart';
+import 'package:mysql1/mysql1.dart';
+
+class DatabaseService {
+  // Configuração do banco de dados
+  final ConnectionSettings settings = ConnectionSettings(
+    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
+    port: 3306,
+    user: 'app',
+    password: 'trabalhosaude2024',
+    db: 'tisaudebanco',
+  );
+
+  Future<MySqlConnection> getConnection() async {
+    return await MySqlConnection.connect(settings);
+  }
+}
 
 class CadastroClinica extends StatefulWidget {
   @override
@@ -9,24 +24,61 @@ class CadastroClinica extends StatefulWidget {
 class _CadastroClinicaState extends State<CadastroClinica> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _enderecoController = TextEditingController();
+  final TextEditingController _tipoAtendimentoController = TextEditingController();
+  final TextEditingController _especialidadesController = TextEditingController();
   final TextEditingController _telefoneController = TextEditingController();
-  final TextEditingController _horarioController = TextEditingController();
+  final TextEditingController _imagemController = TextEditingController();
+  final TextEditingController _horarioAberturaController = TextEditingController();
+  final TextEditingController _horarioFechamentoController = TextEditingController();
+  final DatabaseService _databaseService = DatabaseService();
 
-  void _cadastrarClinica() {
-    if (_formKey.currentState!.validate()) {
-      // Exibir mensagem de confirmação ao cadastrar a clínica
+  // Método para salvar os dados no banco
+  Future<void> _salvarClinicaNoBanco() async {
+    final conn = await _databaseService.getConnection();
+
+    try {
+      await conn.query(
+        '''
+        INSERT INTO tbl_clinica (nome, endereco, tipo_atendimento, especialidades, telefone, imagem, horario_abertura, horario_fechamento, status_autorizacao) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''',
+        [
+          _nomeController.text,
+          _enderecoController.text,
+          _tipoAtendimentoController.text,
+          _especialidadesController.text,
+          _telefoneController.text,
+          _imagemController.text,
+          _horarioAberturaController.text,
+          _horarioFechamentoController.text,
+          'pendente' // Definido como 'pendente' para indicar que aguarda aprovação
+        ],
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cadastro enviado para análise e validação.')),
       );
+    } catch (e) {
+      print('Erro ao cadastrar clínica: $e');
+    } finally {
+      await conn.close();
+    }
+  }
+
+  // Método de validação e cadastro
+  void _cadastrarClinica() async {
+    if (_formKey.currentState!.validate()) {
+      await _salvarClinicaNoBanco();
 
       // Limpar campos após o cadastro
       _nomeController.clear();
-      _emailController.clear();
       _enderecoController.clear();
+      _tipoAtendimentoController.clear();
+      _especialidadesController.clear();
       _telefoneController.clear();
-      _horarioController.clear();
+      _imagemController.clear();
+      _horarioAberturaController.clear();
+      _horarioFechamentoController.clear();
     }
   }
 
@@ -53,22 +105,31 @@ class _CadastroClinicaState extends State<CadastroClinica> {
                 },
               ),
               TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'E-mail'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o e-mail';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
                 controller: _enderecoController,
                 decoration: InputDecoration(labelText: 'Endereço Completo'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o endereço';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _tipoAtendimentoController,
+                decoration: InputDecoration(labelText: 'Tipo de Atendimento'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o tipo de atendimento';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _especialidadesController,
+                decoration: InputDecoration(labelText: 'Especialidades'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira as especialidades';
                   }
                   return null;
                 },
@@ -85,11 +146,31 @@ class _CadastroClinicaState extends State<CadastroClinica> {
                 },
               ),
               TextFormField(
-                controller: _horarioController,
-                decoration: InputDecoration(labelText: 'Horário de Funcionamento'),
+                controller: _imagemController,
+                decoration: InputDecoration(labelText: 'URL da Imagem'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o horário de funcionamento';
+                    return 'Por favor, insira a URL da imagem';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _horarioAberturaController,
+                decoration: InputDecoration(labelText: 'Horário de Abertura (HH:MM:SS)'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o horário de abertura';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _horarioFechamentoController,
+                decoration: InputDecoration(labelText: 'Horário de Fechamento (HH:MM:SS)'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o horário de fechamento';
                   }
                   return null;
                 },

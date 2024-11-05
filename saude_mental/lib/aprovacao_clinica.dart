@@ -1,186 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:mysql1/mysql1.dart';
 import 'package:saude_mental/database/mysql_connection.dart';
 
+class DatabaseService {
+  // Configuração do banco de dados
+  final ConnectionSettings settings = ConnectionSettings(
+    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
+    port: 3306,
+    user: 'app',
+    password: 'trabalhosaude2024',
+    db: 'tisaudebanco',
+  );
 
-void main() {
-  runApp(MyApp());
-}
+  Future<MySqlConnection> connect() async {
+    return await MySqlConnection.connect(settings);
+  }
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Solicitações de Cadastro',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: SolicitacaoClinicas(),
-    );
+  // Função para buscar todas as clínicas
+  Future<List<Map<String, dynamic>>> listarClinicas() async {
+    final conn = await connect();
+    try {
+      var results = await conn.query('SELECT id, nome, status_autorizacao FROM tbl_clinica');
+      return results.map((row) => {
+        'id': row['id'],
+        'nome': row['nome'],
+        'status_autorizacao': row['status_autorizacao'] == 'aprovado'
+      }).toList();
+    } catch (e) {
+      print('Erro ao buscar clínicas: $e');
+      return [];
+    } finally {
+      await conn.close();
+    }
+  }
+
+  // Função para atualizar o status de aprovação da clínica
+  Future<void> atualizarStatusClinica(int clinicaId, bool aprovada) async {
+    final conn = await connect();
+    try {
+      await conn.query(
+        'UPDATE tbl_clinica SET status_autorizacao = ? WHERE id = ?',
+        [aprovada ? 'aprovado' : 'pendente', clinicaId],
+      );
+    } catch (e) {
+      print('Erro ao atualizar status de aprovação da clínica: $e');
+    } finally {
+      await conn.close();
+    }
   }
 }
 
-class SolicitacaoClinicas extends StatefulWidget {
+// Widget para listar clínicas e aprovar/reprovar
+class ListaClinicasWidget extends StatefulWidget {
   @override
-  _SolicitacaoClinicasState createState() => _SolicitacaoClinicasState();
+  _ListaClinicasWidgetState createState() => _ListaClinicasWidgetState();
 }
 
-class _SolicitacaoClinicasState extends State<SolicitacaoClinicas> {
-  // Lista de clínicas para simulação
-  final List<Clinica> clinicas = [
-    Clinica(nome: 'Clínica A', email: 'clinicaA@email.com', endereco: 'Rua A, 123'),
-    Clinica(nome: 'Clínica B', email: 'clinicaB@email.com', endereco: 'Rua B, 456'),
-    // Adicione mais clínicas conforme necessário
-  ];
+class _ListaClinicasWidgetState extends State<ListaClinicasWidget> {
+  late Future<List<Map<String, dynamic>>> _clinicasFuture;
 
-  // Lista de clínicas já processadas
-  final List<Historico> historico = [];
+  @override
+  void initState() {
+    super.initState();
+    _clinicasFuture = DatabaseService().listarClinicas();
+  }
+
+  // Função para atualizar o status da clínica e recarregar a lista
+  void _atualizarStatus(int clinicaId, bool aprovada) async {
+    await DatabaseService().atualizarStatusClinica(clinicaId, aprovada);
+    setState(() {
+      _clinicasFuture = DatabaseService().listarClinicas();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Solicitações de Cadastro'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.history),
-            onPressed: () {
-              // Navega para a tela de histórico
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => HistoricoAprovacoes(historico: historico),
+        title: Text('Lista de Clínicas'),
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _clinicasFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erro ao carregar as clínicas.'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('Nenhuma clínica encontrada.'));
+          }
+
+          final clinicas = snapshot.data!;
+          return ListView.builder(
+            itemCount: clinicas.length,
+            itemBuilder: (context, index) {
+              final clinica = clinicas[index];
+              return ListTile(
+                title: Text(clinica['nome']),
+                subtitle: Text('Status: ${clinica['status_autorizacao'] ? 'Aprovada' : 'Pendente'}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.check, color: Colors.green),
+                      onPressed: () => _atualizarStatus(clinica['id'], true),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.red),
+                      onPressed: () => _atualizarStatus(clinica['id'], false),
+                    ),
+                  ],
                 ),
               );
             },
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: clinicas.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: EdgeInsets.all(8.0),
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Nome: ${clinicas[index].nome}',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text('E-mail: ${clinicas[index].email}'),
-                  Text('Endereço: ${clinicas[index].endereco}'),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          // Lógica para aprovar o cadastro
-                          _aprovarCadastro(clinicas[index]);
-                        },
-                        child: Text('Aprovar'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Lógica para reprovar o cadastro
-                          _reprovarCadastro(clinicas[index]);
-                        },
-                        child: Text('Reprovar'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           );
         },
       ),
     );
   }
-
-  void _aprovarCadastro(Clinica clinica) {
-    // Adiciona a clínica ao histórico com status aprovado
-    setState(() {
-      historico.add(Historico(nome: clinica.nome, email: clinica.email, endereco: clinica.endereco, status: 'Aprovada'));
-      clinicas.remove(clinica); // Remove a clínica da lista
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cadastro da ${clinica.nome} aprovado.')),
-    );
-  }
-
-  void _reprovarCadastro(Clinica clinica) {
-    // Adiciona a clínica ao histórico com status reprovado
-    setState(() {
-      historico.add(Historico(nome: clinica.nome, email: clinica.email, endereco: clinica.endereco, status: 'Reprovada'));
-      clinicas.remove(clinica); // Remove a clínica da lista
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cadastro da ${clinica.nome} reprovado.')),
-    );
-  }
-}
-
-class HistoricoAprovacoes extends StatelessWidget {
-  final List<Historico> historico;
-
-  HistoricoAprovacoes({required this.historico});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Histórico de Aprovações'),
-      ),
-      body: ListView.builder(
-        itemCount: historico.length,
-        itemBuilder: (context, index) {
-          final item = historico[index];
-          return Card(
-            margin: EdgeInsets.all(8.0),
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Nome: ${item.nome}',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text('E-mail: ${item.email}'),
-                  Text('Endereço: ${item.endereco}'),
-                  Chip(
-                    label: Text(item.status),
-                    backgroundColor: item.status == 'Aprovada' ? Colors.green : Colors.red,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// Classe para representar os dados da clínica
-class Clinica {
-  final String nome;
-  final String email;
-  final String endereco;
-
-  Clinica({required this.nome, required this.email, required this.endereco});
-}
-
-// Classe para representar o histórico de aprovações
-class Historico {
-  final String nome;
-  final String email;
-  final String endereco;
-  final String status;
-
-  Historico({required this.nome, required this.email, required this.endereco, required this.status});
 }
