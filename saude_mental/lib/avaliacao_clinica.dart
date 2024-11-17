@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mysql1/mysql1.dart';
+import 'home_page.dart';
 import 'package:saude_mental/database/mysql_connection.dart';
+import 'package:mysql1/mysql1.dart';
 
+//TESTE 17/11/2024/222
 class AvaliacaoClinicaPage extends StatefulWidget {
-  final int idClinica;
-  final int idUsuario;
-
-  AvaliacaoClinicaPage({required this.idClinica, required this.idUsuario});
-
   @override
   _AvaliacaoClinicaPageState createState() => _AvaliacaoClinicaPageState();
 }
@@ -17,33 +14,19 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   final TextEditingController _comentarioController = TextEditingController();
   List<String> _tiposServicos = ['Psicoterapia', 'Psiquiatria'];
   List<String> _servicosSelecionados = [];
+  final DatabaseService _dbService = DatabaseService();
 
-  // Configuração do banco de dados
-  final ConnectionSettings settings = ConnectionSettings(
-    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
-    port: 3306,
-    user: 'app',
-    password: 'trabalhosaude2024',
-    db: 'tisaudebanco',
-  );
-
-  Future<void> _enviarAvaliacao() async {
+  void _enviarAvaliacao() async {
     try {
-      // Conectar ao banco
-      final conn = await MySqlConnection.connect(settings);
+      // Chame o método para enviar os dados ao banco
+      await _dbService.enviarAvaliacao(
+        idClinica: 1, // Substitua pelo ID correto da clínica
+        idUsuario: 123, // Substitua pelo ID correto do usuário
+        nota: _nota,
+        comentario: _comentarioController.text,
+      );
 
-      try {
-        // Executar o INSERT na tabela tbl_avaliacao
-        var result = await conn.query(
-          'INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
-          [
-            widget.idClinica,
-            widget.idUsuario,
-            _nota,
-            _comentarioController.text,
-          ],
-        );
-      // Exibir pop-up de confirmação
+      // Exibir um pop-up de confirmação
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -54,7 +37,10 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Fechar o pop-up
-                  Navigator.pop(context); // Voltar para a página anterior
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
                 },
                 child: Text('OK'),
               ),
@@ -70,28 +56,22 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
         _servicosSelecionados.clear();
       });
     } catch (e) {
-      // Mostrar erro se ocorrer
+      // Exibir um erro caso falhe ao enviar a avaliação
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('Erro'),
-            content:
-                Text('Ocorreu um erro ao enviar a avaliação. Tente novamente.'),
+            content: Text('Ocorreu um erro ao enviar sua avaliação.'),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: Text('OK'),
               ),
             ],
           );
         },
       );
-      print('Erro ao enviar avaliação: $e');
-    } finally {
-      await conn.close();
     }
   }
 
@@ -132,6 +112,25 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
               ),
             ),
             SizedBox(height: 20),
+            Text('Indicação de Serviço:', style: TextStyle(fontSize: 18)),
+            Column(
+              children: _tiposServicos.map((servico) {
+                return CheckboxListTile(
+                  title: Text(servico),
+                  value: _servicosSelecionados.contains(servico),
+                  onChanged: (bool? selecionado) {
+                    setState(() {
+                      if (selecionado == true) {
+                        _servicosSelecionados.add(servico);
+                      } else {
+                        _servicosSelecionados.remove(servico);
+                      }
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: _enviarAvaliacao,
               child: Text('Enviar Avaliação'),
@@ -140,5 +139,42 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
         ),
       ),
     );
+  }
+}
+
+// Classe para o serviço de banco de dados
+class DatabaseService {
+  // Configuração do banco de dados
+  final ConnectionSettings settings = ConnectionSettings(
+    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
+    port: 3306,
+    user: 'app',
+    password: 'trabalhosaude2024',
+    db: 'tisaudebanco',
+  );
+
+  Future<MySqlConnection> connect() async {
+    return await MySqlConnection.connect(settings);
+  }
+
+  Future<void> enviarAvaliacao({
+    required int idClinica,
+    required int idUsuario,
+    required int nota,
+    String? comentario,
+  }) async {
+    final conn = await connect();
+    try {
+      // Insere os dados na tabela tbl_avaliacao
+      await conn.query(
+        'INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
+        [idClinica, idUsuario, nota, comentario],
+      );
+    } catch (e) {
+      print('Erro ao enviar avaliação: $e');
+      throw e;
+    } finally {
+      await conn.close();
+    }
   }
 }
