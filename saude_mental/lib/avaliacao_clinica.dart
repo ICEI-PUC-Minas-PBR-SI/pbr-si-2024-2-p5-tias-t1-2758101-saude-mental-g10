@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart'; 
+import 'home_page.dart';
 import 'package:saude_mental/database/mysql_connection.dart';
 
-
+//TESTE 17/11/2024
 class AvaliacaoClinicaPage extends StatefulWidget {
   @override
   _AvaliacaoClinicaPageState createState() => _AvaliacaoClinicaPageState();
