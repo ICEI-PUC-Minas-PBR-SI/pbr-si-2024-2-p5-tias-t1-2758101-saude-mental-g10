@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+import 'package:mysql1/mysql1.dart';
 import 'package:saude_mental/database/mysql_connection.dart';
 
-//TESTE 17/11/2024/222
 class AvaliacaoClinicaPage extends StatefulWidget {
+  final int idClinica;
+  final int idUsuario;
+
+  AvaliacaoClinicaPage({required this.idClinica, required this.idUsuario});
+
   @override
   _AvaliacaoClinicaPageState createState() => _AvaliacaoClinicaPageState();
 }
@@ -14,38 +18,80 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   List<String> _tiposServicos = ['Psicoterapia', 'Psiquiatria'];
   List<String> _servicosSelecionados = [];
 
-  void _enviarAvaliacao() {
-    // Exibir um pop-up de confirmação
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Avaliação Enviada'),
-          content: Text('Sua avaliação foi submetida com sucesso.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fechar o pop-up
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          HomePage()), // Redirecionar para HomePage
-                );
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+  // Configuração do banco de dados
+  final ConnectionSettings settings = ConnectionSettings(
+    host: 'tisaudebanco.ctcyu2aastmp.us-east-1.rds.amazonaws.com',
+    port: 3306,
+    user: 'app',
+    password: 'trabalhosaude2024',
+    db: 'tisaudebanco',
+  );
 
-    // Limpar os campos (opcional)
-    setState(() {
-      _nota = 0;
-      _comentarioController.clear();
-      _servicosSelecionados.clear();
-    });
+  Future<void> _enviarAvaliacao() async {
+    final conn = await MySqlConnection.connect(settings);
+
+    try {
+      // Inserir dados no banco
+      await conn.query(
+        'INSERT INTO tbl_avaliacoes (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
+        [
+          widget.idClinica, // ID da clínica passado como argumento
+          widget.idUsuario, // ID do usuário passado como argumento
+          _nota,
+          _comentarioController.text,
+        ],
+      );
+
+      // Exibir pop-up de confirmação
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Avaliação Enviada'),
+            content: Text('Sua avaliação foi submetida com sucesso.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fechar o pop-up
+                  Navigator.pop(context); // Voltar para a página anterior
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+
+      // Limpar os campos
+      setState(() {
+        _nota = 0;
+        _comentarioController.clear();
+        _servicosSelecionados.clear();
+      });
+    } catch (e) {
+      // Mostrar erro se ocorrer
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Erro'),
+            content:
+                Text('Ocorreu um erro ao enviar a avaliação. Tente novamente.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      print('Erro ao enviar avaliação: $e');
+    } finally {
+      await conn.close();
+    }
   }
 
   @override
@@ -83,25 +129,6 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
                 labelText: 'Comentário',
                 border: OutlineInputBorder(),
               ),
-            ),
-            SizedBox(height: 20),
-            Text('Indicação de Serviço:', style: TextStyle(fontSize: 18)),
-            Column(
-              children: _tiposServicos.map((servico) {
-                return CheckboxListTile(
-                  title: Text(servico),
-                  value: _servicosSelecionados.contains(servico),
-                  onChanged: (bool? selecionado) {
-                    setState(() {
-                      if (selecionado == true) {
-                        _servicosSelecionados.add(servico);
-                      } else {
-                        _servicosSelecionados.remove(servico);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
             ),
             SizedBox(height: 20),
             ElevatedButton(
