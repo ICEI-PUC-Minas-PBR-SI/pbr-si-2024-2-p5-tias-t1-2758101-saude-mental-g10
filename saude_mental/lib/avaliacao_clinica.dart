@@ -33,7 +33,7 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     try {
       // Inserir dados no banco
       await conn.query(
-        'INSERT INTO tbl_avaliacoes (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
+        'INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
         [
           widget.idClinica, // ID da clínica passado como argumento
           widget.idUsuario, // ID do usuário passado como argumento
