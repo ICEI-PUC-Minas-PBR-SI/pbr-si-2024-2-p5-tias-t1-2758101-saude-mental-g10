@@ -28,20 +28,21 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   );
 
   Future<void> _enviarAvaliacao() async {
-    final conn = await MySqlConnection.connect(settings);
-
     try {
-      // Inserir dados no banco
-      await conn.query(
-        'INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
-        [
-          widget.idClinica, // ID da clínica passado como argumento
-          widget.idUsuario, // ID do usuário passado como argumento
-          _nota,
-          _comentarioController.text,
-        ],
-      );
+      // Conectar ao banco
+      final conn = await MySqlConnection.connect(settings);
 
+      try {
+        // Executar o INSERT na tabela tbl_avaliacao
+        var result = await conn.query(
+          'INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao) VALUES (?, ?, ?, ?, NOW())',
+          [
+            widget.idClinica,
+            widget.idUsuario,
+            _nota,
+            _comentarioController.text,
+          ],
+        );
       // Exibir pop-up de confirmação
       showDialog(
         context: context,
