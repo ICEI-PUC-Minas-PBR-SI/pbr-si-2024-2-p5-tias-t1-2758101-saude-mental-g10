@@ -142,7 +142,7 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   }
 }
 
-// Classe para o serviço de banco de dados
+// Classe para o serviço de banco de dados.
 class DatabaseService {
   // Configuração do banco de dados
   final ConnectionSettings settings = ConnectionSettings(
