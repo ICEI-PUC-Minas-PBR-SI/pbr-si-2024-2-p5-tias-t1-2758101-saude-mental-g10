@@ -20,8 +20,8 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     try {
       // Chame o método para enviar os dados ao banco
       await _dbService.enviarAvaliacao(
-        idClinica: 1, // Substitua pelo ID correto da clínica
-        idUsuario: 123, // Substitua pelo ID correto do usuário
+        idClinica: 1, // Substitua
+        idUsuario: 123, // Substitua
         nota: _nota,
         comentario: _comentarioController.text,
       );
