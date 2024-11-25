@@ -20,7 +20,8 @@ class MyApp extends StatelessWidget {
 
 class DoubtsPublicationScreen extends StatefulWidget {
   @override
-  _DoubtsPublicationScreenState createState() => _DoubtsPublicationScreenState();
+  _DoubtsPublicationScreenState createState() =>
+      _DoubtsPublicationScreenState();
 }
 
 class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
@@ -31,7 +32,7 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
   bool _isHighContrast = false;
   late AnimationController _controller;
   late Animation<Color?> _titleColorAnimation;
-  Color _buttonColor = Colors.teal;
+  Color _buttonColor = Colors.white;
   bool _showResponsibilityMessage = true;
 
   @override
@@ -42,8 +43,8 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
       duration: const Duration(seconds: 2),
     );
     _titleColorAnimation = ColorTween(
-      begin: Colors.teal.shade900,
-      end: Colors.teal.shade700,
+      begin: Colors.black, // Alterado para preto padrão
+      end: Colors.grey.shade700, // Alterado para um tom de cinza
     ).animate(_controller);
     _controller.repeat(reverse: true);
   }
@@ -124,7 +125,9 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
   void _toggleHighContrast() {
     setState(() {
       _isHighContrast = !_isHighContrast;
-      _buttonColor = _isHighContrast ? Colors.yellow[600]! : Colors.teal;
+      _buttonColor = _isHighContrast
+          ? Colors.yellow[600]!
+          : Colors.white; // Mantido branco padrão
     });
   }
 
@@ -175,7 +178,9 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 22,
-                  color: _isHighContrast ? Colors.white : _titleColorAnimation.value,
+                  color: _isHighContrast
+                      ? Colors.white
+                      : _titleColorAnimation.value,
                 ),
               ),
             );
@@ -185,7 +190,7 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
           IconButton(
             icon: Icon(
               _isHighContrast ? Icons.wb_sunny : Icons.nights_stay,
-              color: _isHighContrast ? Colors.white : Colors.teal,
+              color: _isHighContrast ? Colors.white : Colors.black,
             ),
             onPressed: _toggleHighContrast,
           ),
@@ -194,7 +199,9 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
       body: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: _isHighContrast ? Colors.black : Colors.tealAccent.shade100,
+          color: _isHighContrast
+              ? Colors.black
+              : Colors.white, // Cor de fundo padrão
         ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -203,10 +210,14 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: _isHighContrast ? BorderSide(color: Colors.white, width: 2) : BorderSide.none,
+                side: _isHighContrast
+                    ? BorderSide(color: Colors.white, width: 2)
+                    : BorderSide.none,
               ),
               elevation: 5,
-              color: _isHighContrast ? Colors.grey[800] : Colors.white,
+              color: _isHighContrast
+                  ? Colors.grey[800]
+                  : Colors.white, // Cor do cartão padrão
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -219,7 +230,7 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: _isHighContrast ? Colors.white : Colors.teal.shade800,
+                          color: _isHighContrast ? Colors.white : Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -233,7 +244,8 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                         style: TextStyle(
                           fontSize: 16,
                           fontStyle: FontStyle.italic,
-                          color: _isHighContrast ? Colors.white70 : Colors.black,
+                          color:
+                              _isHighContrast ? Colors.white70 : Colors.black,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -247,33 +259,37 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
               controller: _doubtController,
               decoration: InputDecoration(
                 hintText: 'Digite sua dúvida',
-                hintStyle: TextStyle(color: _isHighContrast ? Colors.white70 : Colors.black54),
+                hintStyle: TextStyle(
+                    color: _isHighContrast ? Colors.white70 : Colors.black54),
                 border: OutlineInputBorder(),
                 filled: true,
                 fillColor: _isHighContrast ? Colors.grey[700] : Colors.white,
               ),
-              style: TextStyle(color: _isHighContrast ? Colors.white : Colors.black),
+              style: TextStyle(
+                  color: _isHighContrast ? Colors.white : Colors.black),
               maxLines: 3,
             ),
             SizedBox(height: 16),
             MouseRegion(
               onEnter: (_) {
                 setState(() {
-                  _buttonColor = _isHighContrast ? Colors.yellow[300]! : Colors.teal[300]!;
+                  _buttonColor = _isHighContrast
+                      ? Colors.yellow[300]!
+                      : Colors.grey[300]!; // Alterado para cor padrão
                 });
               },
               onExit: (_) {
                 setState(() {
-                  _buttonColor = _isHighContrast ? Colors.yellow[600]! : Colors.teal;
+                  _buttonColor = _isHighContrast
+                      ? Colors.yellow[600]!
+                      : Colors.white; // Mantido branco padrão
                 });
               },
               child: GestureDetector(
                 onTap: _publishDoubt,
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [_buttonColor, _isHighContrast ? Colors.yellow[300]! : Colors.teal[400]!],
-                    ),
+                    color: _buttonColor, // Cor padrão
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
@@ -283,13 +299,14 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: Center(
                     child: Text(
                       'Enviar Pergunta',
                       style: TextStyle(
-                        color: _isHighContrast ? Colors.black : Colors.white,
-                        fontSize: 16,
+                        color: Color(0xFF004D00), // Verde bem escuro
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -303,9 +320,17 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                 itemCount: _doubts.length,
                 itemBuilder: (context, index) {
                   return Card(
-                    margin: EdgeInsets.symmetric(vertical: 8),
-                    color: _isHighContrast ? Colors.grey[800] : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                          color: _isHighContrast ? Colors.white : Colors.black,
+                          width: 1),
+                    ),
+                    margin: EdgeInsets.only(bottom: 16),
                     elevation: 5,
+                    color: _isHighContrast
+                        ? Colors.grey[800]
+                        : Colors.white, // Cor do cartão padrão
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
@@ -314,46 +339,79 @@ class _DoubtsPublicationScreenState extends State<DoubtsPublicationScreen>
                           Text(
                             _doubts[index].text,
                             style: TextStyle(
+                              color:
+                                  _isHighContrast ? Colors.white : Colors.black,
                               fontSize: 16,
-                              color: _isHighContrast ? Colors.white : Colors.black,
                             ),
                           ),
-                          SizedBox(height: 10),
+                          SizedBox(height: 8),
                           TextField(
                             controller: _responseController,
                             decoration: InputDecoration(
                               hintText: 'Digite sua resposta',
-                              hintStyle: TextStyle(color: _isHighContrast ? Colors.white70 : Colors.black54),
+                              hintStyle: TextStyle(
+                                  color: _isHighContrast
+                                      ? Colors.white70
+                                      : Colors.black54),
                               border: OutlineInputBorder(),
                               filled: true,
-                              fillColor: _isHighContrast ? Colors.grey[700] : Colors.white,
+                              fillColor: _isHighContrast
+                                  ? Colors.grey[700]
+                                  : Colors.white,
                             ),
-                            style: TextStyle(color: _isHighContrast ? Colors.white : Colors.black),
+                            style: TextStyle(
+                                color: _isHighContrast
+                                    ? Colors.white
+                                    : Colors.black),
+                            maxLines: 2,
                           ),
                           SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () => _respondToDoubt(index),
-                            child: Text('Responder'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton(
+                                onPressed: () => _respondToDoubt(index),
+                                child: Text(
+                                  'Responder',
+                                  style: TextStyle(
+                                      color: _isHighContrast
+                                          ? Colors.yellow[600]
+                                          : Colors.blue),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete,
+                                    color: _isHighContrast
+                                        ? Colors.red
+                                        : Colors.black),
+                                onPressed: () => _deleteDoubt(index),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 10),
                           if (_doubts[index].responses.isNotEmpty) ...[
+                            SizedBox(height: 8),
                             Text(
                               'Respostas:',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: _isHighContrast ? Colors.white : Colors.black,
+                                color: _isHighContrast
+                                    ? Colors.white
+                                    : Colors.black,
                               ),
                             ),
-                            for (var response in _doubts[index].responses)
-                              Text(
-                                response,
-                                style: TextStyle(color: _isHighContrast ? Colors.white70 : Colors.black54),
-                              ),
+                            ..._doubts[index]
+                                .responses
+                                .map((response) => Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        response,
+                                        style: TextStyle(
+                                            color: _isHighContrast
+                                                ? Colors.white70
+                                                : Colors.black54),
+                                      ),
+                                    )),
                           ],
-                          IconButton(
-                            icon: Icon(Icons.delete, color: _isHighContrast ? Colors.red : Colors.black),
-                            onPressed: () => _deleteDoubt(index),
-                          ),
                         ],
                       ),
                     ),
