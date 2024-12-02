@@ -31,6 +31,9 @@ class _CadastroClinicaState extends State<CadastroClinica> {
   final TextEditingController _imagemController = TextEditingController();
   final TextEditingController _horarioAberturaController = TextEditingController();
   final TextEditingController _horarioFechamentoController = TextEditingController();
+  final TextEditingController _senhaController = TextEditingController();
+  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Novo campo para e-mail
   final DatabaseService _databaseService = DatabaseService();
 
   // Método para salvar os dados no banco
@@ -40,8 +43,8 @@ class _CadastroClinicaState extends State<CadastroClinica> {
     try {
       await conn.query(
         '''
-        INSERT INTO tbl_clinica (nome, endereco, tipo_atendimento, especialidades, telefone, imagem, horario_abertura, horario_fechamento, status_autorizacao) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO tbl_clinica (nome, endereco, tipo_atendimento, especialidades, telefone, imagem, horario_abertura, horario_fechamento, senha, cnpj, email, status_autorizacao) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           _nomeController.text,
@@ -52,11 +55,14 @@ class _CadastroClinicaState extends State<CadastroClinica> {
           _imagemController.text,
           _horarioAberturaController.text,
           _horarioFechamentoController.text,
-          'pendente' // Definido como 'pendente' para indicar que aguarda aprovação
+          _senhaController.text,
+          _cnpjController.text,
+          _emailController.text, // Salvando o e-mail
+          'pendente', // Definido como 'pendente' para indicar que aguarda aprovação
         ],
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cadastro enviado para análise e validação.')),
+        const SnackBar(content: Text('Cadastro enviado para análise e validação.')),
       );
     } catch (e) {
       print('Erro ao cadastrar clínica: $e');
@@ -79,6 +85,9 @@ class _CadastroClinicaState extends State<CadastroClinica> {
       _imagemController.clear();
       _horarioAberturaController.clear();
       _horarioFechamentoController.clear();
+      _senhaController.clear();
+      _cnpjController.clear();
+      _emailController.clear(); // Limpar o e-mail
     }
   }
 
@@ -86,17 +95,17 @@ class _CadastroClinicaState extends State<CadastroClinica> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cadastro de Clínica'),
+        title: const Text('Cadastro de Clínica'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
               TextFormField(
                 controller: _nomeController,
-                decoration: InputDecoration(labelText: 'Nome da Clínica'),
+                decoration: const InputDecoration(labelText: 'Nome da Clínica'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o nome da clínica';
@@ -106,7 +115,7 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _enderecoController,
-                decoration: InputDecoration(labelText: 'Endereço Completo'),
+                decoration: const InputDecoration(labelText: 'Endereço Completo'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o endereço';
@@ -115,8 +124,18 @@ class _CadastroClinicaState extends State<CadastroClinica> {
                 },
               ),
               TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'E-mail'),
+                validator: (value) {
+                  if (value == null || value.isEmpty || !value.contains('@')) {
+                    return 'Por favor, insira um e-mail válido';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
                 controller: _tipoAtendimentoController,
-                decoration: InputDecoration(labelText: 'Tipo de Atendimento'),
+                decoration: const InputDecoration(labelText: 'Tipo de Atendimento'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o tipo de atendimento';
@@ -126,7 +145,7 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _especialidadesController,
-                decoration: InputDecoration(labelText: 'Especialidades'),
+                decoration: const InputDecoration(labelText: 'Especialidades'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira as especialidades';
@@ -136,7 +155,7 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _telefoneController,
-                decoration: InputDecoration(labelText: 'Telefone de Contato'),
+                decoration: const InputDecoration(labelText: 'Telefone de Contato'),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -147,38 +166,36 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _imagemController,
-                decoration: InputDecoration(labelText: 'URL da Imagem'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira a URL da imagem';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'URL da Imagem'),
               ),
               TextFormField(
                 controller: _horarioAberturaController,
-                decoration: InputDecoration(labelText: 'Horário de Abertura (HH:MM:SS)'),
+                decoration: const InputDecoration(labelText: 'Horário de Abertura (HH:MM:SS)'),
+              ),
+              TextFormField(
+                controller: _horarioFechamentoController,
+                decoration: const InputDecoration(labelText: 'Horário de Fechamento (HH:MM:SS)'),
+              ),
+              TextFormField(
+                controller: _senhaController,
+                decoration: const InputDecoration(labelText: 'Senha'),
+                obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o horário de abertura';
+                    return 'Por favor, insira a senha';
                   }
                   return null;
                 },
               ),
               TextFormField(
-                controller: _horarioFechamentoController,
-                decoration: InputDecoration(labelText: 'Horário de Fechamento (HH:MM:SS)'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o horário de fechamento';
-                  }
-                  return null;
-                },
+                controller: _cnpjController,
+                decoration: const InputDecoration(labelText: 'CNPJ'),
+                keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _cadastrarClinica,
-                child: Text('Cadastrar'),
+                child: const Text('Cadastrar'),
               ),
             ],
           ),

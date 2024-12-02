@@ -10,10 +10,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-
-  bool _isLoading = false;
-
   final _formKey = GlobalKey<FormState>();
+
+  bool _isClinica = false; // Identifica se é clínica ou usuário
+  bool _isLoading = false;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -25,18 +25,31 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final conn = await connectToDatabase();
 
-      final results = await conn.query(
-        'SELECT tipo_usuario FROM tbl_usuario WHERE email = ? AND senha = ?',
-        [_emailController.text, _senhaController.text],
-      );
+      // Consulta ajustada com base no tipo selecionado
+      String query;
+      List<dynamic> params;
+
+      if (_isClinica) {
+        query = 'SELECT email FROM tbl_clinica WHERE email = ? AND senha = ?';
+        params = [_emailController.text, _senhaController.text];
+      } else {
+        query = 'SELECT tipo_usuario FROM tbl_usuario WHERE email = ? AND senha = ?';
+        params = [_emailController.text, _senhaController.text];
+      }
+
+      final results = await conn.query(query, params);
 
       if (results.isNotEmpty) {
-        final tipoUsuario = results.first['tipo_usuario'];
-
-        if (tipoUsuario == 'ADM') {
-          Navigator.pushReplacementNamed(context, '/home');
-        } else if (tipoUsuario == 'USUARIO') {
-          Navigator.pushReplacementNamed(context, '/home_comum');
+        if (_isClinica) {
+          // Redireciona clínica para a página de serviços
+          Navigator.pushReplacementNamed(context, '/home_clinicas');
+        } else {
+          final tipoUsuario = results.first['tipo_usuario'];
+          if (tipoUsuario == 'ADM') {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else if (tipoUsuario == 'USUARIO') {
+            Navigator.pushReplacementNamed(context, '/home_comum');
+          }
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,12 +86,12 @@ class _LoginPageState extends State<LoginPage> {
                 child: Text(
                   'Bem-vindo ao MenteViva',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 10),
               // Formulário com validação
               Form(
                 key: _formKey,
@@ -122,14 +135,30 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 15),// Checkbox para selecionar o tipo de login
+                    Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                    Checkbox(
+                    value: _isClinica,
+                    onChanged: (value) {
+                      setState(() {
+                        _isClinica = value!;
+                      });
+                    },
+                  ),
+                  const Text('Sou uma clínica'),
+                    ],
+                  ),
+                    
+                    const SizedBox(height: 15),
                     // Botão de Login
                     _isLoading
                         ? Center(child: CircularProgressIndicator(color: Colors.greenAccent))
                         : ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.greenAccent, // Corrigido
+                              backgroundColor: Colors.greenAccent,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),

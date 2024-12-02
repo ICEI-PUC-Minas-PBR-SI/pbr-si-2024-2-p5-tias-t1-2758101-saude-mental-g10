@@ -61,12 +61,12 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     } catch (e) {
       _mostrarDialogo(
         'Erro',
-        'Não foi possível carregar as clínicas.',
+        'Não foi possível carregar as clínicas. Erro: $e', // Melhor exibir erro completo para debug
       );
     }
   }
 
-  // Carregar avaliações do usuário
+  // Carregar avaliações do usuário (somente as aprovadas)
   Future<void> _carregarAvaliacoesUsuario() async {
     try {
       final conn = await DatabaseService.getConnection();
@@ -76,7 +76,7 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
         SELECT a.id, c.nome AS clinica, a.nota, a.comentario, a.data_avaliacao
         FROM tbl_avaliacao a
         INNER JOIN tbl_clinica c ON a.id_clinica = c.id
-        WHERE a.id_usuario = ? 
+        WHERE a.id_usuario = ? AND a.status_avaliacao = 'aprovada'
         ''',
         [idUsuario],
       );
@@ -98,7 +98,7 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     } catch (e) {
       _mostrarDialogo(
         'Erro',
-        'Não foi possível carregar suas avaliações.',
+        'Não foi possível carregar suas avaliações. Erro: $e', // Exibe erro de maneira amigável
       );
     }
   }
@@ -118,8 +118,8 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
 
       await conn.query(
         '''
-        INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO tbl_avaliacao (id_clinica, id_usuario, nota, comentario, data_avaliacao, status_avaliacao)
+        VALUES (?, ?, ?, ?, ?, 'pendente')
         ''',
         [
           _idClinicaSelecionada,
@@ -147,23 +147,185 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     }
   }
 
-  // Função para excluir uma avaliação
-  Future<void> _excluirAvaliacao(int idAvaliacao) async {
+  // Exibir dialogo de erro ou sucesso
+  void _mostrarDialogo(String titulo, String mensagem) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Avaliação da Clínica'),
+        actions: [
+          // Somente exibe o botão de aprovação para o ADM
+          IconButton(
+            icon: Icon(Icons.admin_panel_settings),
+            onPressed: () {
+              // Navegar para a tela de aprovação
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TelaAprovacaoPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Selecione a Clínica:', style: TextStyle(fontSize: 18)),
+              DropdownButton<int>(
+                value: _idClinicaSelecionada,
+                hint: Text('Selecione uma clínica'),
+                isDense: true, // Adicionando o isDense
+                items: _clinicas.map((clinica) {
+                  return DropdownMenuItem<int>(
+                    value: clinica['id'],
+                    child: Text(clinica['nome']),
+                  );
+                }).toList(),
+                onChanged: (int? value) {
+                  setState(() {
+                    _idClinicaSelecionada = value;
+                  });
+                },
+              ),
+              SizedBox(height: 16),
+              Text('Nota:', style: TextStyle(fontSize: 18)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      Icons.star,
+                      color: index < _nota ? Colors.yellow : Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _nota = index + 1;
+                      });
+                    },
+                  );
+                }),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _comentarioController,
+                decoration: InputDecoration(labelText: 'Comentário'),
+                maxLines: 4,
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _enviarAvaliacao,
+                child: Text('Enviar Avaliação'),
+              ),
+              SizedBox(height: 32),
+              Text('Avaliações:', style: TextStyle(fontSize: 18)),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: _avaliacoes.length,
+                itemBuilder: (context, index) {
+                  final avaliacao = _avaliacoes[index];
+                  return ListTile(
+                    title: Text(avaliacao['clinica']),
+                    subtitle: Text(
+                        '${avaliacao['nota']} estrelas\n${avaliacao['comentario']}'),
+                    trailing: Text(avaliacao['data']),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Tela de Aprovação (Administrador)
+class TelaAprovacaoPage extends StatefulWidget {
+  @override
+  _TelaAprovacaoPageState createState() => _TelaAprovacaoPageState();
+}
+
+class _TelaAprovacaoPageState extends State<TelaAprovacaoPage> {
+  List<Map<String, dynamic>> _avaliacoesPendentes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarAvaliacoesPendentes();
+  }
+
+  // Carregar avaliações pendentes do banco de dados
+  Future<void> _carregarAvaliacoesPendentes() async {
+    try {
+      final conn = await DatabaseService.getConnection();
+      final results = await conn.query(
+        '''
+        SELECT a.id, c.nome AS clinica, a.nota, a.comentario, a.data_avaliacao
+        FROM tbl_avaliacao a
+        INNER JOIN tbl_clinica c ON a.id_clinica = c.id
+        WHERE a.status_avaliacao = 'pendente'
+        ''',
+      );
+
+      setState(() {
+        _avaliacoesPendentes = results
+            .map((row) => {
+                  'id': row['id'],
+                  'clinica': row['clinica'],
+                  'nota': row['nota'],
+                  'comentario': row['comentario'],
+                  'data':
+                      DateFormat('dd/MM/yyyy').format(row['data_avaliacao']),
+                })
+            .toList();
+      });
+
+      await conn.close();
+    } catch (e) {
+      _mostrarDialogo('Erro',
+          'Não foi possível carregar as avaliações pendentes. Erro: $e');
+    }
+  }
+
+  // Aprovar ou Recusar avaliação
+  Future<void> _aprovarOuRecusarAvaliacao(int idAvaliacao, String acao) async {
     try {
       final conn = await DatabaseService.getConnection();
       await conn.query(
-        'DELETE FROM tbl_avaliacao WHERE id = ?',
-        [idAvaliacao],
+        'UPDATE tbl_avaliacao SET status_avaliacao = ? WHERE id = ?',
+        [acao, idAvaliacao],
       );
-
       await conn.close();
 
-      _mostrarDialogo('Sucesso', 'Avaliação excluída com sucesso.');
-      // Atualizar a lista de avaliações
-      await _carregarAvaliacoesUsuario();
+      _mostrarDialogo('Sucesso',
+          'Avaliação ${acao == 'aprovada' ? 'aprovada' : 'reprovada'} com sucesso.');
+      await _carregarAvaliacoesPendentes();
     } catch (e) {
-      print('Erro ao excluir avaliação: $e');
-      _mostrarDialogo('Erro', 'Não foi possível excluir a avaliação.');
+      _mostrarDialogo('Erro',
+          'Erro ao ${acao == 'aprovada' ? 'aprovar' : 'reprovar'} avaliação. Erro: $e');
     }
   }
 
@@ -189,123 +351,54 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Avaliação da Clínica'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Selecione a Clínica:', style: TextStyle(fontSize: 18)),
-              DropdownButton<int>(
-                value: _idClinicaSelecionada,
-                hint: Text('Selecione uma clínica'),
-                items: _clinicas.map((clinica) {
-                  return DropdownMenuItem<int>(
-                    value: clinica['id'],
-                    child: Text(clinica['nome']),
+      appBar: AppBar(title: Text('Avaliações Pendentes')),
+      body: ListView.builder(
+        itemCount: _avaliacoesPendentes.length,
+        itemBuilder: (context, index) {
+          final avaliacao = _avaliacoesPendentes[index];
+          return ListTile(
+            title: Text(avaliacao['clinica']),
+            subtitle: Text(
+                '${avaliacao['nota']} estrelas\n${avaliacao['comentario']}'),
+            trailing: Text(avaliacao['data']),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Aprovar ou Reprovar'),
+                    content: Text('Deseja aprovar ou recusar esta avaliação?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          _aprovarOuRecusarAvaliacao(
+                              avaliacao['id'], 'aprovada');
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Aprovar'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          _aprovarOuRecusarAvaliacao(
+                              avaliacao['id'], 'reprovada');
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Reprovar'),
+                      ),
+                    ],
                   );
-                }).toList(),
-                onChanged: (int? value) {
-                  setState(() {
-                    _idClinicaSelecionada = value;
-                  });
                 },
-              ),
-              SizedBox(height: 20),
-              Text('Nota:', style: TextStyle(fontSize: 18)),
-              Row(
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      Icons.star,
-                      color: index < _nota ? Colors.yellow : Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _nota = index + 1;
-                      });
-                    },
-                  );
-                }),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _comentarioController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  labelText: 'Comentário',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _enviarAvaliacao,
-                child: Text('Enviar Avaliação'),
-              ),
-              SizedBox(height: 40),
-              Text('Suas Avaliações:', style: TextStyle(fontSize: 18)),
-              SizedBox(height: 10),
-              _avaliacoes.isEmpty
-                  ? Text('Nenhuma avaliação encontrada.')
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _avaliacoes.length,
-                      itemBuilder: (context, index) {
-                        final avaliacao = _avaliacoes[index];
-                        return Card(
-                          margin: EdgeInsets.symmetric(vertical: 8.0),
-                          child: ListTile(
-                            title: Text(avaliacao['clinica']),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Nota: ${avaliacao['nota']}'),
-                                Text('Comentário: ${avaliacao['comentario']}'),
-                                Text('Data: ${avaliacao['data']}'),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text('Confirmação'),
-                                      content: Text(
-                                          'Deseja realmente excluir esta avaliação?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: Text('Cancelar'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            Navigator.of(context).pop();
-                                            await _excluirAvaliacao(
-                                                avaliacao['id']);
-                                          },
-                                          child: Text('Excluir'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ],
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: AvaliacaoClinicaPage(),
+  ));
 }
