@@ -147,6 +147,26 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
     }
   }
 
+  // Função para excluir uma avaliação
+  Future<void> _excluirAvaliacao(int idAvaliacao) async {
+    try {
+      final conn = await DatabaseService.getConnection();
+      await conn.query(
+        'DELETE FROM tbl_avaliacao WHERE id = ?',
+        [idAvaliacao],
+      );
+
+      await conn.close();
+
+      _mostrarDialogo('Sucesso', 'Avaliação excluída com sucesso.');
+      // Atualizar a lista de avaliações
+      await _carregarAvaliacoesUsuario();
+    } catch (e) {
+      print('Erro ao excluir avaliação: $e');
+      _mostrarDialogo('Erro', 'Não foi possível excluir a avaliação.');
+    }
+  }
+
   // Exibir dialogo de erro ou sucesso
   void _mostrarDialogo(String titulo, String mensagem) {
     showDialog(
@@ -247,6 +267,36 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
                                 Text('Comentário: ${avaliacao['comentario']}'),
                                 Text('Data: ${avaliacao['data']}'),
                               ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Confirmação'),
+                                      content: Text(
+                                          'Deseja realmente excluir esta avaliação?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+                                            await _excluirAvaliacao(
+                                                avaliacao['id']);
+                                          },
+                                          child: Text('Excluir'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
                             ),
                           ),
                         );
