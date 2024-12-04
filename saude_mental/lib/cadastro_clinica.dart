@@ -25,15 +25,20 @@ class _CadastroClinicaState extends State<CadastroClinica> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _enderecoController = TextEditingController();
-  final TextEditingController _tipoAtendimentoController = TextEditingController();
-  final TextEditingController _especialidadesController = TextEditingController();
+  final TextEditingController _tipoAtendimentoController =
+      TextEditingController();
+  final TextEditingController _especialidadesController =
+      TextEditingController();
   final TextEditingController _telefoneController = TextEditingController();
   final TextEditingController _imagemController = TextEditingController();
-  final TextEditingController _horarioAberturaController = TextEditingController();
-  final TextEditingController _horarioFechamentoController = TextEditingController();
+  final TextEditingController _horarioAberturaController =
+      TextEditingController();
+  final TextEditingController _horarioFechamentoController =
+      TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final TextEditingController _cnpjController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController(); // Novo campo para e-mail
+  final TextEditingController _emailController =
+      TextEditingController(); // Novo campo para e-mail
   final DatabaseService _databaseService = DatabaseService();
 
   // Método para salvar os dados no banco
@@ -62,7 +67,8 @@ class _CadastroClinicaState extends State<CadastroClinica> {
         ],
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cadastro enviado para análise e validação.')),
+        const SnackBar(
+            content: Text('Cadastro enviado para análise e validação.')),
       );
     } catch (e) {
       print('Erro ao cadastrar clínica: $e');
@@ -115,7 +121,8 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _enderecoController,
-                decoration: const InputDecoration(labelText: 'Endereço Completo'),
+                decoration:
+                    const InputDecoration(labelText: 'Endereço Completo'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o endereço';
@@ -135,7 +142,8 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _tipoAtendimentoController,
-                decoration: const InputDecoration(labelText: 'Tipo de Atendimento'),
+                decoration:
+                    const InputDecoration(labelText: 'Tipo de Atendimento'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira o tipo de atendimento';
@@ -155,7 +163,8 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _telefoneController,
-                decoration: const InputDecoration(labelText: 'Telefone de Contato'),
+                decoration:
+                    const InputDecoration(labelText: 'Telefone de Contato'),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -170,11 +179,13 @@ class _CadastroClinicaState extends State<CadastroClinica> {
               ),
               TextFormField(
                 controller: _horarioAberturaController,
-                decoration: const InputDecoration(labelText: 'Horário de Abertura (HH:MM:SS)'),
+                decoration: const InputDecoration(
+                    labelText: 'Horário de Abertura (HH:MM:SS)'),
               ),
               TextFormField(
                 controller: _horarioFechamentoController,
-                decoration: const InputDecoration(labelText: 'Horário de Fechamento (HH:MM:SS)'),
+                decoration: const InputDecoration(
+                    labelText: 'Horário de Fechamento (HH:MM:SS)'),
               ),
               TextFormField(
                 controller: _senhaController,

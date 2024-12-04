@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:saude_mental/database/mysql_connection.dart';
 
-
 void main() {
   runApp(MyApp());
 }
@@ -21,13 +20,15 @@ class MyApp extends StatelessWidget {
 
 class CadastroServicosClinica extends StatefulWidget {
   @override
-  _CadastroServicosClinicaState createState() => _CadastroServicosClinicaState();
+  _CadastroServicosClinicaState createState() =>
+      _CadastroServicosClinicaState();
 }
 
 class _CadastroServicosClinicaState extends State<CadastroServicosClinica> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _servicosController = TextEditingController();
-  List<String> _servicosCadastrados = []; // Lista para armazenar serviços cadastrados
+  List<String> _servicosCadastrados =
+      []; // Lista para armazenar serviços cadastrados
 
   // Função para validação e envio do formulário
   void _cadastrarServicos() {
@@ -38,7 +39,9 @@ class _CadastroServicosClinicaState extends State<CadastroServicosClinica> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Serviço "${_servicosController.text}" cadastrado com sucesso.')),
+        SnackBar(
+            content: Text(
+                'Serviço "${_servicosController.text}" cadastrado com sucesso.')),
       );
 
       // Limpar o campo após o cadastro

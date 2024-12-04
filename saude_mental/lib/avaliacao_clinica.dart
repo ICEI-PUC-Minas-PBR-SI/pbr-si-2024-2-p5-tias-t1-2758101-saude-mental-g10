@@ -70,7 +70,7 @@ class _AvaliacaoClinicaPageState extends State<AvaliacaoClinicaPage> {
   Future<void> _carregarAvaliacoesUsuario() async {
     try {
       final conn = await DatabaseService.getConnection();
-      const idUsuario = 1; // Substitua pelo ID do usuário logado
+      int idUsuario = 1; // Obtenha o id do usuário logado
       final results = await conn.query(
         '''
         SELECT a.id, c.nome AS clinica, a.nota, a.comentario, a.data_avaliacao

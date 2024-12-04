@@ -31,7 +31,15 @@ class DatabaseService {
       // Alterado para inserir na tabela tbl_usuario
       await conn.query(
         'INSERT INTO tbl_usuario (nome, email, senha, endereco, telefone, psicoterapia, psiquiatria) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [nome, email, senha, endereco, telefone, psicoterapia ? 1 : 0, psiquiatria ? 1 : 0],
+        [
+          nome,
+          email,
+          senha,
+          endereco,
+          telefone,
+          psicoterapia ? 1 : 0,
+          psiquiatria ? 1 : 0
+        ],
       );
     } catch (e) {
       print('Erro ao cadastrar cliente: $e');
@@ -53,7 +61,8 @@ class _CadastroClienteState extends State<CadastroCliente> {
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
-  final TextEditingController _confirmarSenhaController = TextEditingController();
+  final TextEditingController _confirmarSenhaController =
+      TextEditingController();
   final TextEditingController _enderecoController = TextEditingController();
   final TextEditingController _telefoneController = TextEditingController();
 
@@ -71,8 +80,12 @@ class _CadastroClienteState extends State<CadastroCliente> {
         nome: _nomeController.text,
         email: _emailController.text,
         senha: _senhaController.text,
-        endereco: _enderecoController.text.isNotEmpty ? _enderecoController.text : null,
-        telefone: _telefoneController.text.isNotEmpty ? _telefoneController.text : null,
+        endereco: _enderecoController.text.isNotEmpty
+            ? _enderecoController.text
+            : null,
+        telefone: _telefoneController.text.isNotEmpty
+            ? _telefoneController.text
+            : null,
         psicoterapia: _psicoterapia,
         psiquiatria: _psiquiatria,
       );
@@ -165,12 +178,14 @@ class _CadastroClienteState extends State<CadastroCliente> {
               // Endereço Completo (Opcional)
               TextFormField(
                 controller: _enderecoController,
-                decoration: InputDecoration(labelText: 'Endereço Completo (Opcional)'),
+                decoration:
+                    InputDecoration(labelText: 'Endereço Completo (Opcional)'),
               ),
               // Telefone de Contato (Opcional)
               TextFormField(
                 controller: _telefoneController,
-                decoration: InputDecoration(labelText: 'Telefone de Contato (Opcional)'),
+                decoration: InputDecoration(
+                    labelText: 'Telefone de Contato (Opcional)'),
                 keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 20.0),
@@ -194,7 +209,7 @@ class _CadastroClienteState extends State<CadastroCliente> {
                 },
               ),
               SizedBox(height: 20.0),
-              
+
               ElevatedButton(
                 onPressed: _cadastrar,
                 child: Text('Cadastrar'),

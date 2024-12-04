@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isClinica = false; // Identifica se é clínica ou usuário
   bool _isLoading = false;
 
+  // Função de login com autenticação
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -33,7 +34,8 @@ class _LoginPageState extends State<LoginPage> {
         query = 'SELECT email FROM tbl_clinica WHERE email = ? AND senha = ?';
         params = [_emailController.text, _senhaController.text];
       } else {
-        query = 'SELECT tipo_usuario FROM tbl_usuario WHERE email = ? AND senha = ?';
+        query =
+            'SELECT tipo_usuario FROM tbl_usuario WHERE email = ? AND senha = ?';
         params = [_emailController.text, _senhaController.text];
       }
 
@@ -41,24 +43,31 @@ class _LoginPageState extends State<LoginPage> {
 
       if (results.isNotEmpty) {
         if (_isClinica) {
-          // Redireciona clínica para a página de serviços
+          // Se for clínica, redireciona para a tela de clínicas
           Navigator.pushReplacementNamed(context, '/home_clinicas');
         } else {
           final tipoUsuario = results.first['tipo_usuario'];
           if (tipoUsuario == 'ADM') {
+            // Se for admin, redireciona para a tela de admin
             Navigator.pushReplacementNamed(context, '/home');
           } else if (tipoUsuario == 'USUARIO') {
+            // Se for usuário comum, redireciona para a tela de usuário
             Navigator.pushReplacementNamed(context, '/home_comum');
           }
         }
       } else {
+        // Caso as credenciais sejam inválidas
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Credenciais inválidas. Verifique o e-mail e senha.')),
+          const SnackBar(
+              content:
+                  Text('Credenciais inválidas. Verifique o e-mail e senha.')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao tentar fazer login. Tente novamente mais tarde.')),
+        const SnackBar(
+            content: Text(
+                'Erro ao tentar fazer login. Tente novamente mais tarde.')),
       );
       print('Erro ao tentar fazer login: $e');
     } finally {
@@ -106,11 +115,14 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.greenAccent),
                         ),
-                        prefixIcon: Icon(Icons.email, color: Colors.greenAccent),
+                        prefixIcon:
+                            Icon(Icons.email, color: Colors.greenAccent),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.isEmpty || !value.contains('@')) {
+                        if (value == null ||
+                            value.isEmpty ||
+                            !value.contains('@')) {
                           return 'Por favor, insira um e-mail válido.';
                         }
                         return null;
@@ -135,26 +147,28 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 15),// Checkbox para selecionar o tipo de login
+                    const SizedBox(
+                        height: 15), // Checkbox para selecionar o tipo de login
                     Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                    Checkbox(
-                    value: _isClinica,
-                    onChanged: (value) {
-                      setState(() {
-                        _isClinica = value!;
-                      });
-                    },
-                  ),
-                  const Text('Sou uma clínica'),
-                    ],
-                  ),
-                    
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Checkbox(
+                          value: _isClinica,
+                          onChanged: (value) {
+                            setState(() {
+                              _isClinica = value!;
+                            });
+                          },
+                        ),
+                        const Text('Sou uma clínica'),
+                      ],
+                    ),
                     const SizedBox(height: 15),
                     // Botão de Login
                     _isLoading
-                        ? Center(child: CircularProgressIndicator(color: Colors.greenAccent))
+                        ? Center(
+                            child: CircularProgressIndicator(
+                                color: Colors.greenAccent))
                         : ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
@@ -164,7 +178,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               padding: EdgeInsets.symmetric(vertical: 16),
                             ),
-                            child: const Text('Entrar', style: TextStyle(fontSize: 18)),
+                            child: const Text('Entrar',
+                                style: TextStyle(fontSize: 18)),
                           ),
                   ],
                 ),
@@ -178,14 +193,16 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/cadastro_cliente');
                     },
-                    child: const Text('Cadastre-se usuário', style: TextStyle(fontSize: 14)),
+                    child: const Text('Cadastre-se usuário',
+                        style: TextStyle(fontSize: 14)),
                   ),
                   const SizedBox(width: 10),
                   TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/cadastro_clinica');
                     },
-                    child: const Text('Cadastre-se clínica', style: TextStyle(fontSize: 14)),
+                    child: const Text('Cadastre-se clínica',
+                        style: TextStyle(fontSize: 14)),
                   ),
                 ],
               ),
